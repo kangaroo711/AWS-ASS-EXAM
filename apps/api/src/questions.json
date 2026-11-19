@@ -1,0 +1,572 @@
+[
+  {
+    "id": 1,
+    "domain": "EC2与计算",
+    "question": "一家初创公司在 EC2 上运行网站，流量每天规律波动（白天高、夜间低），希望最大化节省成本。应选择哪种实例购买方式？",
+    "options": [
+      "On-Demand 按需实例",
+      "Reserved Instance（1年期）",
+      "Spot 实例",
+      "Dedicated Host 专用主机"
+    ],
+    "answer": 0,
+    "explanations": [
+      "✅ 正确：流量波动且无长期稳定基线，On-Demand 按秒/小时计费、随开随关，最灵活且无承诺风险，波动负载的最优解。",
+      "❌ RI 需承诺 1 年或 3 年付费，适合 7×24 稳定基线负载。流量昼夜波动大时会出现『付费但闲置』的浪费，不符合题意。",
+      "❌ Spot 最高约 90% 折扣，但 AWS 可提前 2 分钟回收实例，网站会随时中断，绝不能用于承载在线服务。",
+      "❌ Dedicated Host 是整台物理机独占，用于合规/许可证自带（如 Windows Server 按核授权）场景，最贵的选项，与省钱背道而驰。"
+    ],
+    "tip": "真考口诀：稳定负载→RI，波动负载→On-Demand，可中断任务→Spot，合规独占→Dedicated Host。"
+  },
+  {
+    "id": 2,
+    "domain": "EC2与计算",
+    "question": "某应用需要持久化的块存储，实例重启后数据不丢失，且以后可以挂载到其他 EC2 实例。应使用：",
+    "options": [
+      "Instance Store",
+      "EBS 卷",
+      "S3",
+      "EFS"
+    ],
+    "answer": 1,
+    "explanations": [
+      "❌ Instance Store 是挂在宿主机上的临时盘，实例停止/终止即数据全丢，是本题最大陷阱——『重启不丢』四个字直接排除它。",
+      "✅ 正确：EBS 是网络附着块存储，独立于实例生命周期，可卸载后重新挂到另一台实例，重启数据保留。",
+      "❌ S3 是对象存储，不能作为块设备挂载给操作系统当磁盘用，适合存文件/备份/静态资源。",
+      "❌ EFS 是共享文件系统（NFS），强项是多实例并发挂载，但题意只说单实例持久块存储且要挂到『其他实例』，EBS 更对口且更便宜。"
+    ],
+    "tip": "持久块存储→EBS；临时高速缓存→Instance Store；共享文件→EFS；对象/备份→S3。"
+  },
+  {
+    "id": 3,
+    "domain": "EC2与计算",
+    "question": "一台 EC2 实例被意外终止，用户希望防止误操作再次发生。最简单的方案是：",
+    "options": [
+      "开启 CloudWatch 告警",
+      "启用终止保护（Termination Protection）",
+      "用 IAM 策略禁止所有 terminate 操作",
+      "每天对实例做 AMI 备份"
+    ],
+    "answer": 1,
+    "explanations": [
+      "❌ CloudWatch 只能『事后通知』，实例已经被删了告警也没用，防不了误操作本身。",
+      "✅ 正确：终止保护是 EC2 实例上的一个开关，开启后任何人调用 terminate 都会被 API 直接拒绝，一键解决，符合『最简单』。",
+      "❌ IAM 拒绝策略能防，但会影响正常运维（真要删时还得改权限），改动面大，不满足『最简单』。",
+      "❌ AMI 备份是事后恢复手段，不阻止误删，且每天备份增加成本与复杂度。"
+    ],
+    "tip": "防误删→Termination Protection；备份恢复→AMI/快照；审计→CloudTrail。"
+  },
+  {
+    "id": 4,
+    "domain": "存储",
+    "question": "应用需要跨多个可用区（AZ）的高可用文件存储，多实例可同时挂载、按需扩展容量。应选择：",
+    "options": [
+      "EBS gp3",
+      "S3",
+      "EFS",
+      "Instance Store"
+    ],
+    "answer": 2,
+    "explanations": [
+      "❌ EBS 是块存储，默认只能挂一个实例（multi-attach 仅 io1/io2 且有限制），不符合『多实例同时挂载』。",
+      "❌ S3 是对象存储，通过 HTTP API 访问，不是文件系统，无法直接挂载给应用当目录用。",
+      "✅ 正确：EFS 是托管 NFS 文件系统，天然跨 AZ、支持成千上万实例并发挂载、容量按使用量自动伸缩，完全命中题意。",
+      "❌ Instance Store 临时存储，随实例消亡，既不持久也不跨 AZ。"
+    ],
+    "tip": "共享并发挂载→EFS；单实例块盘→EBS；对象存储→S3。"
+  },
+  {
+    "id": 5,
+    "domain": "存储",
+    "question": "公司要将本地数据迁移到 S3，总数据量 70TB，专线带宽有限，希望在 2 周内完成。最合适的方式：",
+    "options": [
+      "直接通过 internet 上传",
+      "S3 Transfer Acceleration",
+      "AWS Snowball Edge",
+      "多台 EC2 分段上传"
+    ],
+    "answer": 2,
+    "explanations": [
+      "❌ 带宽有限的网络传 70TB 要几个月，2 周期限直接否决。",
+      "❌ Transfer Acceleration 用 CloudFront 边缘节点加速上传，适合『跨洲、小文件多』场景，70TB 级别既慢又产生高额加速费。",
+      "✅ 正确：超过 10TB 的离线批量迁移标准答案就是 Snowball 系列物理设备——AWS 寄一台防震存储箱给你，拷完寄回，2 周绰绰有余。",
+      "❌ EC2 分段上传本质还是走网络，没解决带宽瓶颈，且架构复杂无意义。"
+    ],
+    "tip": "数据迁移口诀：<10TB 走网络（直传/TA）；>10TB 用 Snowball；PB 级用 Snowmobile。"
+  },
+  {
+    "id": 6,
+    "domain": "存储",
+    "question": "某静态网站只需托管 HTML/CSS/JS，要求全球低延迟访问且成本最低。最佳方案：",
+    "options": [
+      "EC2 + Apache",
+      "S3 静态网站托管",
+      "EC2 Auto Scaling + ELB",
+      "RDS + EC2"
+    ],
+    "answer": 1,
+    "explanations": [
+      "❌ 为静态页面开服务器是杀鸡用牛刀：要管补丁、扩容、监控，运维和成本都高。",
+      "✅ 正确：S3 静态网站托管零服务器、按存储+请求计费（几乎免费），配合 CloudFront 边缘缓存实现全球低延迟，是『静态+低成本』的标配。",
+      "❌ ASG+ELB 是动态应用的高可用架构，静态网站根本不需要，徒增成本。",
+      "❌ RDS 是关系数据库，静态网站没有数据库需求，完全无关选项。"
+    ],
+    "tip": "看到『静态网站+低成本』→ S3(+CloudFront)；看到『动态应用+高可用』→ ASG+ALB。"
+  },
+  {
+    "id": 7,
+    "domain": "存储",
+    "question": "某公司存档数据一年最多访问一次，可接受数小时恢复时间，要求成本最低。应选：",
+    "options": [
+      "S3 Standard",
+      "S3 Standard-IA",
+      "S3 Glacier Flexible Retrieval",
+      "S3 One Zone-IA"
+    ],
+    "answer": 2,
+    "explanations": [
+      "❌ S3 Standard 是最贵的热存储层，用于频繁访问数据，存归档数据浪费严重。",
+      "❌ Standard-IA 适合『每月访问一次』级别，取回快但存储费仍高于归档层，年访问 1 次的场景不划算。",
+      "✅ 正确：Glacier Flexible Retrieval 存储费最低，支持标准取回（3-5 小时）满足『数小时恢复』要求，归档场景的标准答案。",
+      "❌ One Zone-IA 单 AZ 存储，便宜但可用性低（AZ 故障即丢数据），归档数据通常不容忍单点风险。"
+    ],
+    "tip": "访问频率从热到冷：Standard → IA → Glacier Instant/Flexible → Deep Archive（恢复 12h+，最便宜）。"
+  },
+  {
+    "id": 8,
+    "domain": "安全与IAM",
+    "question": "EC2 实例的 IAM Role 相比把 Access Key 存在实例上，最主要的优势是：",
+    "options": [
+      "性能更好",
+      "凭证自动轮换、无需管理密钥",
+      "成本更低",
+      "网络更快"
+    ],
+    "answer": 1,
+    "explanations": [
+      "❌ Role 与实例计算性能无关，凭证管理方式不影响 CPU/内存。",
+      "✅ 正确：Role 通过 STS 下发临时凭证并自动轮换，无硬编码密钥可泄露、无需手动换 Key，这是它相对静态 Access Key 的核心安全优势。",
+      "❌ 两者都免费，没有成本差异。",
+      "❌ Role 不影响网络路径与速度。"
+    ],
+    "tip": "真考铁律：任何『把密钥写在代码/实例上』的选项都是错误答案，正确答案永远是 IAM Role。"
+  },
+  {
+    "id": 9,
+    "domain": "网络VPC",
+    "question": "VPC 中一个私有子网的 EC2 需要下载软件更新，但不应被互联网主动访问。最合适的方案：",
+    "options": [
+      "分配公网 IP",
+      "配置 NAT Gateway",
+      "配置 Internet Gateway + 弹性 IP",
+      "打开 0.0.0.0/0 入站规则"
+    ],
+    "answer": 1,
+    "explanations": [
+      "❌ 公网 IP 让实例直接暴露在公网，违背『不被主动访问』要求。",
+      "✅ 正确：NAT Gateway 部署在公有子网，允许私有子网实例『只出不进』地访问互联网，正好匹配出站更新+入站封禁的需求。",
+      "❌ IGW+弹性 IP 等于给实例公网身份，同样暴露。",
+      "❌ 开放 0.0.0.0/0 入站是把大门敞开，方向都反了。"
+    ],
+    "tip": "私有子网出站→NAT Gateway（公有/私有子网的判断是 VPC 必考题）。"
+  },
+  {
+    "id": 10,
+    "domain": "网络VPC",
+    "question": "安全组（Security Group）与 NACL 的关键区别，正确的是：",
+    "options": [
+      "安全组有状态，NACL 无状态",
+      "NACL 有状态，安全组无状态",
+      "两者都有状态",
+      "两者都无状态"
+    ],
+    "answer": 0,
+    "explanations": [
+      "✅ 正确：SG 有状态——放行入站请求后，返回流量自动放行，无需配出站规则；作用于实例级。",
+      "❌ 反了。NACL 无状态：入站放行的包，其响应包出站时还要再过一次出站规则，两条规则都要手动配。",
+      "❌ 只有 SG 有状态。",
+      "❌ NACL 是无状态的，且『都无状态』不符合 SG 的事实。"
+    ],
+    "tip": "记法：SG 记住你（有状态/实例级/只配允许），NACL 健忘（无状态/子网级/可配拒绝，有默认拒绝规则编号）。"
+  },
+  {
+    "id": 11,
+    "domain": "网络VPC",
+    "question": "应用部署在公有子网的 ALB 之后，ALB 只允许来自 CloudFront 的流量，防止用户绕过 CDN 直连。最佳方案：",
+    "options": [
+      "ALB 安全组只放行 CloudFront 的 IP 段",
+      "在 ALB 上配置自定义 Header 校验",
+      "使用 AWS WAF 地域限制",
+      "给 CloudFront 加签名 URL"
+    ],
+    "answer": 1,
+    "explanations": [
+      "❌ CloudFront 的边缘 IP 段会动态变化且全球共享，IP 白名单既维护不动，也拦不住别人用同段 IP 伪造来源。",
+      "✅ 正确：CloudFront Origin Request Policy 注入自定义 Header（如 X-Origin-Verify 随机密钥），ALB Listener Rule 只转发带正确 Header 的请求——伪造者不知道密钥值，2024-2026 真题高频。",
+      "❌ WAF 地域限制拦的是『来自哪些国家』，不能区分『来自 CloudFront 还是直连』。",
+      "❌ 签名 URL 用于限制私有内容的访问授权（防盗链），不是防直连源站的机制，且要求用户侧带签名，业务上不现实。"
+    ],
+    "tip": "防绕过 CDN 直连源站 → 自定义 Header 校验；内容授权/防盗链 → 签名 URL/Cookie。"
+  },
+  {
+    "id": 12,
+    "domain": "高可用",
+    "question": "Web 层需要高可用且自动应对流量峰值，最少运维的方案：",
+    "options": [
+      "手动开启多台 EC2",
+      "EC2 Auto Scaling Group 跨多 AZ + Application Load Balancer",
+      "单台大规格 EC2 + CloudWatch 告警",
+      "Lambda + API Gateway"
+    ],
+    "answer": 1,
+    "explanations": [
+      "❌ 手动扩容既不及时也无人值守不了，流量峰值来时根本反应不过来，谈不上『最少运维』。",
+      "✅ 正确：ASG 自动扩缩+自动替换不健康实例，多 AZ 提供机房级容灾，ALB 分发流量，三者组合是 Web 层高可用的教科书答案。",
+      "❌ 单台实例无论多强都是单点故障，一台挂了整个网站不可用。",
+      "❌ Lambda+API Gateway 适合无状态 API/事件驱动场景；传统 Web 层（会话、长连接）迁移改造成本大，不是题意所指。"
+    ],
+    "tip": "Web 高可用三件套：ASG + 多 AZ + ALB，出现即可优先选。"
+  },
+  {
+    "id": 13,
+    "domain": "高可用",
+    "question": "某数据库要求主库故障时自动切换到备库，RDS 应启用：",
+    "options": [
+      "只读副本（Read Replica）",
+      "多可用区部署（Multi-AZ）",
+      "手动快照恢复",
+      "Aurora Serverless"
+    ],
+    "answer": 1,
+    "explanations": [
+      "❌ Read Replica 是异步复制的读扩展，用于分摊读流量；提升性能但不自动做主备切换（除非显式提升为独立实例）。",
+      "✅ 正确：Multi-AZ 同步复制到备 AZ，主库故障时 DNS 自动切换到备库，就是为高可用设计的。",
+      "❌ 手动快照恢复要人工操作且丢最近数据，既不『自动』也不符合故障切换语义。",
+      "❌ Aurora Serverless 是按需弹性版本，虽也有高可用，但题目明确说的是 RDS 的机制，且 Multi-AZ 是最直接匹配的选项。"
+    ],
+    "tip": "最高频送分对比：Multi-AZ=高可用自动切换（同步）；Read Replica=读性能扩展（异步）。"
+  },
+  {
+    "id": 14,
+    "domain": "高可用",
+    "question": "一家全球公司希望用户就近访问网站且源站故障时自动指向备用区域。应使用：",
+    "options": [
+      "Elastic Load Balancer",
+      "Route 53 加权轮询",
+      "Route 53 故障转移路由（Failover）",
+      "CloudFront 源站组"
+    ],
+    "answer": 2,
+    "explanations": [
+      "❌ ELB 是区域内部负载均衡器，不能做跨区域的 DNS 级故障切换。",
+      "❌ 加权轮询按权重比例把流量分到多个端点，用于灰度/压测分流，不是主备切换语义。",
+      "✅ 正确：Route 53 Failover 路由策略绑定主/备记录+健康检查，主区域故障时 DNS 自动解析到备区域，完全命中题意。",
+      "❌ CloudFront 源站组（Origin Failover）是 CDN 层的源站切换，只对『经 CloudFront 的请求』生效，不能替代全局 DNS 故障转移，且题目考的是 Route 53 路由策略。"
+    ],
+    "tip": "主备区域自动切换 → Route 53 Failover；按比例分流 → 加权；就近解析 → 延迟路由/地理位置路由。"
+  },
+  {
+    "id": 15,
+    "domain": "高可用",
+    "question": "应用要求消息队列削峰填谷，生产者和消费者解耦，且消息可被多个消费者重复消费（广播）。最佳组合：",
+    "options": [
+      "SQS 标准队列 + SNS",
+      "SNS + SQS Fan-out 模式",
+      "Kinesis Data Streams",
+      "SQS FIFO 队列"
+    ],
+    "answer": 1,
+    "explanations": [
+      "❌ 表述含糊：单独 SQS 是拉模式队列，一条消息通常被一个消费者组消费，不满足『广播给多个消费者』。",
+      "✅ 正确：SNS Fan-out 是标准模式——消息先进 SNS，SNS 推送到多个订阅的 SQS，每个下游各拿一份完整消息，同时保留队列削峰能力。",
+      "❌ Kinesis 是大数据实时流（分片、顺序、重放），用于日志/点击流分析，做业务广播是错配。",
+      "❌ FIFO 队列保证顺序去重，但同样是一条消息一个消费链路，不解决广播需求。"
+    ],
+    "tip": "一对多广播 → SNS Fan-out；削峰解耦 → SQS；两者要同时满足就是 SNS+多 SQS。"
+  },
+  {
+    "id": 16,
+    "domain": "数据库",
+    "question": "某应用读流量远大于写流量，主库读压力大。最低成本的优化方案：",
+    "options": [
+      "换更大实例",
+      "创建 RDS 只读副本分摊读流量",
+      "迁移到 DynamoDB",
+      "开启 Multi-AZ"
+    ],
+    "answer": 1,
+    "explanations": [
+      "❌ 升配当然有效，但成本线性上涨且到顶就没路了，『最低成本』下不如加副本。",
+      "✅ 正确：Read Replica 分摊读请求（最多 5/15 个），异步复制延迟通常毫秒级，成本远低于整体升配。",
+      "❌ 迁 DynamoDB 要重写数据层+改应用代码，改造成本巨大，完全违反『最低成本』。",
+      "❌ Multi-AZ 备库只做热备不对外提供读服务，读压力一点不减。"
+    ],
+    "tip": "读扩展→Read Replica；高可用→Multi-AZ；两者可叠加但作用完全不同。"
+  },
+  {
+    "id": 17,
+    "domain": "数据库",
+    "question": "公司需要一个键值数据库支撑每秒数十万次请求，毫秒级延迟，无需 joins，且按请求计费弹性伸缩。应选：",
+    "options": [
+      "RDS for MySQL",
+      "DynamoDB",
+      "Redshift",
+      "ElastiCache"
+    ],
+    "answer": 1,
+    "explanations": [
+      "❌ RDS 是关系型，数十万 QPS 要靠垂直升配+读写副本堆，成本高且弹性差，不符合『按请求计费』。",
+      "✅ 正确：DynamoDB 是托管键值/文档数据库，单表可支撑千万级 QPS、个位数毫秒延迟、按请求容量计费自动伸缩，关键词全部命中。",
+      "❌ Redshift 是 OLAP 数据仓库，用于分析查询（秒级响应），不是在线业务数据库。",
+      "❌ ElastiCache 是内存缓存，加速用但不是持久化主数据库，数据不能只放缓存。"
+    ],
+    "tip": "『键值+海量并发+毫秒级』= DynamoDB 三连关键词，见到即选。"
+  },
+  {
+    "id": 18,
+    "domain": "数据库",
+    "question": "RDS 数据库需要在误删数据后恢复到过去某个时间点。应依靠：",
+    "options": [
+      "Multi-AZ",
+      "自动备份+事务日志（PITR）",
+      "只读副本",
+      "手动 AMI"
+    ],
+    "answer": 1,
+    "explanations": [
+      "❌ Multi-AZ 只同步复制到备库防硬件故障——你误删的数据也会被同步到备库，救不了。",
+      "✅ 正确：开启自动备份后，RDS 保留备份+事务日志，可 PITR（Point-in-Time Recovery）恢复到保留期内任意秒级时间点。",
+      "❌ 只读副本用于读扩展，副本上误删同样发生，不是恢复手段。",
+      "❌ 手动 AMI/快照只能恢复到『打快照那一刻』，颗粒度太粗，做不到任意时间点。"
+    ],
+    "tip": "『恢复到任意时间点』= PITR（依赖自动备份）；『恢复到某快照点』= 手动快照。"
+  },
+  {
+    "id": 19,
+    "domain": "安全与IAM",
+    "question": "公司要求所有 S3 上传对象默认加密，且合规团队可审计谁访问了数据。应组合使用：",
+    "options": [
+      "S3 默认加密 + CloudTrail + S3 访问日志",
+      "手动逐个加密对象",
+      "IAM 禁止所有人访问",
+      "S3 版本控制"
+    ],
+    "answer": 0,
+    "explanations": [
+      "✅ 正确：S3 默认加密（SSE-S3/SSE-KMS）保证落盘加密；CloudTrail 记录所有 API 调用（谁在何时访问了什么）；S3 服务器访问日志记录对象级访问，三层组合完整命中『默认加密+可审计』。",
+      "❌ 手动加密不可靠、会漏，『默认』二字就是要求桶级自动加密。",
+      "❌ 禁止所有人访问等于业务停摆， encryption 与审计需求无关。",
+      "❌ 版本控制是防误删/防覆盖，与加密和审计都不是一回事。"
+    ],
+    "tip": "审计必配 CloudTrail；默认加密用桶级配置；见到『谁访问了什么』→ CloudTrail + S3 访问日志。"
+  },
+  {
+    "id": 20,
+    "domain": "安全与IAM",
+    "question": "开发团队需要给第三方合作伙伴临时访问 S3 的凭证，有效期 2 小时。应使用：",
+    "options": [
+      "创建新 IAM 用户并共享密钥",
+      "STS 临时凭证（Assume Role）",
+      "Root 账号密钥",
+      "把 S3 桶设为公开"
+    ],
+    "answer": 1,
+    "explanations": [
+      "❌ IAM 用户是长期身份，密钥不过期，与『临时 2 小时』矛盾，还要管理回收，安全风险高。",
+      "✅ 正确：STS AssumeRole/GetSessionToken 下发临时凭证，可精确控制有效期（15 分钟~12 小时），到期自动失效，正合题意。",
+      "❌ Root 密钥权限无限大且真考里永远是错误答案，任何场景都不得使用 Root 做日常操作。",
+      "❌ 公开桶是所有人可访问，无身份、无时限，安全上是灾难。"
+    ],
+    "tip": "『临时/短期/跨账号委托』→ STS；真考铁律：Root 密钥和长期共享密钥永远不选。"
+  },
+  {
+    "id": 21,
+    "domain": "安全与IAM",
+    "question": "KMS 信封加密（Envelope Encryption）中，数据密钥（Data Key）的作用是：",
+    "options": [
+      "长期保存在 KMS 中不解密",
+      "本地加密数据，本身被 KMS 主密钥加密后与密文一起存储",
+      "替代 IAM 权限",
+      "用于网络传输加密"
+    ],
+    "answer": 1,
+    "explanations": [
+      "❌ Data Key 的明文绝不持久保存，KMS 也不会替你保管 Data Key，这是流程认知错误。",
+      "✅ 正确：流程为——调 KMS GenerateDataKey 得到明文 Data Key + 被 CMK 加密的密文 Data Key → 用明文 Key 本地加密大数据 → 密文+加密 Key 一起存；解密时调 KMS Decrypt 还原 Data Key。这样大数据加密不占 KMS 配额，主密钥永不离开 KMS。",
+      "❌ 权限由 IAM 管控，Data Key 是加密体系概念，两者不相干。",
+      "❌ 传输加密用 TLS，Data Key 是静态数据加密的机制。"
+    ],
+    "tip": "信封加密一句话：小 Key 加密大 Key，大 Key 加密大数据；CMK 只解 Data Key。"
+  },
+  {
+    "id": 22,
+    "domain": "成本优化",
+    "question": "某团队每月跑一次大规模批处理任务，任务可持续数小时且可中断重跑。最省钱的计算方案：",
+    "options": [
+      "On-Demand EC2",
+      "Spot Fleet / Spot 实例",
+      "Reserved Instance",
+      "Dedicated Host"
+    ],
+    "answer": 1,
+    "explanations": [
+      "❌ On-Demand 全价计费，能省 90% 的场景下用全价，不符合『最省钱』。",
+      "✅ 正确：Spot 可被 2 分钟通知后回收，但任务可中断重跑完全能承受，Spot Fleet 还能跨实例类型池化提高可用性，折扣最高约 90%。",
+      "❌ RI 需承诺 1/3 年，月跑一次的任务利用率极低，承诺费用反而更贵。",
+      "❌ Dedicated Host 是合规专用整机的最贵选项。"
+    ],
+    "tip": "『可中断+批处理』永远是 Spot；注意配套要求：断点续跑、检查点机制。"
+  },
+  {
+    "id": 23,
+    "domain": "成本优化",
+    "question": "公司希望只在有用户请求时才付费运行代码，无服务器、自动伸缩。应选：",
+    "options": [
+      "EC2 Auto Scaling",
+      "Lambda",
+      "ECS on EC2",
+      "Elastic Beanstalk"
+    ],
+    "answer": 1,
+    "explanations": [
+      "❌ ASG 有最小实例数在持续运行，空闲时也在计费，不是『只在请求时付费』。",
+      "✅ 正确：Lambda 按请求次数×执行时长（毫秒粒度）计费，无请求零成本，自动从 0 扩到几千并发，定义级命中。",
+      "❌ ECS on EC2 底层是一直跑着的 EC2 集群，空闲也有成本。",
+      "❌ Beanstalk 是 EC2 之上的部署编排服务，本质还是服务器常驻计费。"
+    ],
+    "tip": "『零请求零成本/按毫秒计费』= Lambda；容器要 Serverless → Fargate。"
+  },
+  {
+    "id": 24,
+    "domain": "成本优化",
+    "question": "S3 中超过 90 天不被访问的数据要自动降级到更便宜的存储层。应使用：",
+    "options": [
+      "手动定期迁移",
+      "S3 生命周期策略（Lifecycle Policy）",
+      "S3 版本控制",
+      "Transfer Acceleration"
+    ],
+    "answer": 1,
+    "explanations": [
+      "❌ 手动迁移需要人力定期执行，会漏会错，『自动』二字否决它。",
+      "✅ 正确：Lifecycle Policy 按对象『年龄』自动转换存储类别（如 30 天→IA、90 天→Glacier），零人力、精确执行。",
+      "❌ 版本控制保留对象历史版本防误删，与存储层转换无关。",
+      "❌ Transfer Acceleration 是上传加速，和存储降级毫无关系。"
+    ],
+    "tip": "『自动转存储层/自动过期删除』→ Lifecycle Policy（转存+过期删除两大用法都要会）。"
+  },
+  {
+    "id": 25,
+    "domain": "弹性与解耦",
+    "question": "微服务 A 调用微服务 B，要求同步调用、低延迟、服务发现与流量治理。AWS 托管方案：",
+    "options": [
+      "SQS",
+      "App Mesh / ECS Service Connect",
+      "SNS",
+      "Step Functions"
+    ],
+    "answer": 1,
+    "explanations": [
+      "❌ SQS 是异步拉模式队列，A 发消息就走不了，不满足『同步调用』。",
+      "✅ 正确：App Mesh（Envoy 服务网格）/ECS Service Connect 提供服务发现、重试、熔断、流量切分，专为同步微服务治理设计。",
+      "❌ SNS 是异步发布订阅广播，同样不是同步调用。",
+      "❌ Step Functions 编排的是多步骤工作流（步骤间有先后状态），不是服务间同步 RPC 治理。"
+    ],
+    "tip": "同步微服务治理→App Mesh；异步解耦→SQS/SNS；流程编排→Step Functions。"
+  },
+  {
+    "id": 26,
+    "domain": "弹性与解耦",
+    "question": "一个长流程订单需要经过 5 个步骤，中间步骤可能失败需重试，要求可视化流程编排。应使用：",
+    "options": [
+      "SQS + Lambda 手写状态机",
+      "AWS Step Functions",
+      "EventBridge",
+      "Kinesis"
+    ],
+    "answer": 1,
+    "explanations": [
+      "❌ 手写状态机要把重试/超时/补偿逻辑全写进代码，维护成本高，且没有可视化界面。",
+      "✅ 正确：Step Functions 用 Amazon States Language 定义流程，内置 Retry/Catch 策略（失败自动重试+错误分支），控制台自带流程可视化图，三大关键词全命中。",
+      "❌ EventBridge 是事件总线（发布/路由事件），不做有状态的多步骤编排。",
+      "❌ Kinesis 是数据流管道，与业务流程编排无关。"
+    ],
+    "tip": "『多步骤+重试+可视化』= Step Functions 三连，见到即选。"
+  },
+  {
+    "id": 27,
+    "domain": "网络VPC",
+    "question": "公司希望私有数据中心与 VPC 之间建立专用私有网络连接，不经公网，稳定低延迟。应使用：",
+    "options": [
+      "Site-to-Site VPN",
+      "Direct Connect",
+      "VPC Peering",
+      "Transit Gateway"
+    ],
+    "answer": 1,
+    "explanations": [
+      "❌ Site-to-Site VPN 走公网建立 IPsec 加密隧道，虽安全但延迟抖动大、带宽受网络质量限制。",
+      "✅ 正确：Direct Connect 是物理专线直连 AWS，不经公网、带宽稳定（1/10/100Gbps）、延迟低且可预测，命中所有关键词。",
+      "❌ VPC Peering 是 VPC 与 VPC 之间互联，不连接本地机房。",
+      "❌ Transit Gateway 是 VPC 间互联的中心枢纽，同样不解决本地机房接入。"
+    ],
+    "tip": "本地机房↔AWS：要稳定专线 → Direct Connect；要快速低成本 → Site-to-Site VPN（常做 DX 备份）。"
+  },
+  {
+    "id": 28,
+    "domain": "网络VPC",
+    "question": "一个组织有数百个 VPC 需要互联，且未来持续新增。可扩展性最好的方案：",
+    "options": [
+      "全量 VPC Peering 两两互联",
+      "AWS Transit Gateway",
+      "每个 VPC 单独 VPN",
+      "Direct Connect 网关直连"
+    ],
+    "answer": 1,
+    "explanations": [
+      "❌ Peering 是两两全互联，N 个 VPC 需要 N(N-1)/2 条连接，数百 VPC 就是几万条配置，不可运维。",
+      "✅ 正确：Transit Gateway 是中心星型（hub-and-spoke）架构，每个 VPC 只连一次 TGW，新增 VPC 零改动既有连接，扩展性最优。",
+      "❌ 每个 VPC 一条 VPN 连接数爆炸且都走公网，性能和管理都不可行。",
+      "❌ Direct Connect 解决的是本地机房接入，不是 VPC 之间互联的问题。"
+    ],
+    "tip": "『大量 VPC 互联/中心化网络』→ Transit Gateway；少量 VPC 点对点 → Peering（非传递性：A-B、B-C 不代表 A-C 通）。"
+  },
+  {
+    "id": 29,
+    "domain": "高可用",
+    "question": "容器化应用需要长期运行的服务，希望不用管理底层服务器，且能与其他 AWS 服务深度集成。应选：",
+    "options": [
+      "ECS on EC2",
+      "ECS on Fargate",
+      "EC2 + Docker 手动部署",
+      "Lightsail"
+    ],
+    "answer": 1,
+    "explanations": [
+      "❌ ECS on EC2 要自己管 EC2 集群（扩容、补丁、容量规划），违背『不用管理服务器』。",
+      "✅ 正确：Fargate 是 Serverless 容器引擎，按任务 CPU/内存计费、无需管任何实例，与 ALB/CloudWatch/IAM 等 AWS 服务无缝集成，命中全部关键词。",
+      "❌ 手动部署是运维最重的选项，真考里永远错误。",
+      "❌ Lightsail 是面向小白的简化 VPS，能力有限，不适合『与其他 AWS 服务深度集成』的企业场景。"
+    ],
+    "tip": "容器 Serverless → Fargate；要自己管集群/有特殊 AMI 需求 → ECS on EC2；K8s 生态 → EKS。"
+  },
+  {
+    "id": 30,
+    "domain": "安全与IAM",
+    "question": "最小权限原则下，某 Lambda 函数只需读取一个特定 S3 桶。IAM 策略应如何写：",
+    "options": [
+      "授予 s3:* 对所有桶",
+      "只授予该桶的 s3:GetObject 动作",
+      "授予 AdministratorAccess 简化管理",
+      "对所有桶授予只读"
+    ],
+    "answer": 1,
+    "explanations": [
+      "❌ s3:* 对所有桶授予了读写删全部动作，远超『只读一个桶』的需求，是典型越权。",
+      "✅ 正确：最小权限=最小动作（GetObject）+最小资源范围（指定桶 ARN），只给完成任务必需的权限，不多不少。",
+      "❌ AdministratorAccess 是管理员全权限，真考里出现永远是错误答案。",
+      "❌ 范围仍是『所有桶』，违背最小资源范围原则。"
+    ],
+    "tip": "最小权限公式：最小动作 × 最小资源。看到 * 或 AdministratorAccess 的选项直接排除。"
+  }
+]
