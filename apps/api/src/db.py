@@ -8,7 +8,7 @@ from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 load_dotenv()
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "mysql+pymysql://aws_ssa:aws_ssa_pass@localhost:3306/aws_ssa?charset=utf8mb4",
+    "mysql+pymysql://aws_ssa:aws_ssa_pass@localhost:3307/aws_ssa?charset=utf8mb4",
 )
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False)

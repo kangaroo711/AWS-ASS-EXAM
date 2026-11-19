@@ -8,7 +8,7 @@ services:
       MYSQL_USER: aws_ssa
       MYSQL_PASSWORD: aws_ssa_pass
     ports:
-      - "3306:3306"
+      - "3307:3306"   # 避开 health160 项目的 some-mysql（3306）
     volumes:
       - mysql_data:/var/lib/mysql
 volumes:
