@@ -1,6 +1,6 @@
 services:
   mysql:
-    image: mysql:8.4
+    image: mysql:latest   # 复用本地已有镜像（health160 同款），不再额外下载
     container_name: aws-ssa-mysql
     environment:
       MYSQL_ROOT_PASSWORD: aws_ssa_root
